@@ -90,6 +90,10 @@ def enviar_email(nome, arquivo_pdf, media):
 st.set_page_config(page_title="Avaliação Maldivas", layout="centered")
 st.title("🏝️ PROGRAMA DE AVALIAÇÃO DE DESEMPENHO INDIVIDUAL MALDIVAS")
 
+# Fora do formulário para garantir que a interface atualize ao mudar a nota
+if 'respostas_notas' not in st.session_state:
+    st.session_state.respostas_notas = [3] * 6
+
 with st.form("form_maldivas"):
     col1, col2 = st.columns(2)
     with col1:
@@ -102,7 +106,7 @@ with st.form("form_maldivas"):
 
     st.divider()
     
-    perguntas = [
+    preguntas_texto = [
         "Qualidade técnica e precisão nas tarefas operacionais?",
         "Cumprimento de prazos e organização de demandas?",
         "Proatividade em sugerir melhorias nos processos?",
@@ -111,20 +115,21 @@ with st.form("form_maldivas"):
         "Alinhamento com a cultura e valores da empresa?"
     ]
 
-    respostas_notas = []
-    justificativas = []
+    respostas_finais_lista = []
+    notas_para_media = []
 
-    for i, p in enumerate(perguntas):
+    for i, p in enumerate(preguntas_texto):
         st.write(f"**{i+1}. {p}**")
-        # Alterado para selectbox conforme a imagem enviada
+        # Selectbox conforme imagem
         nota = st.selectbox(f"Selecione a nota para a pergunta {i+1}", options=[1, 2, 3, 4, 5], index=2, key=f"n_{i}")
         
         obs = ""
-        if nota in [1, 5]:
-            obs = st.text_area(f"Justificativa obrigatória para nota {nota}*", placeholder="Explique o motivo desta nota...", key=f"obs_{i}")
+        # Lógica para aparecer o comentário obrigatório
+        if nota == 1 or nota == 5:
+            obs = st.text_area(f"Justificativa obrigatória (Nota {nota})*", placeholder="Explique o motivo desta nota...", key=f"obs_{i}")
         
-        respostas_notas.append(nota)
-        justificativas.append(obs)
+        respostas_finais_lista.append((p, nota, obs))
+        notas_para_media.append(nota)
         st.markdown("---")
 
     st.write("**Pergunta Dissertativa Final**")
@@ -137,18 +142,17 @@ if enviar:
     if not nome or not area or not gestor or not dissertativa:
         erros.append("Por favor, preencha todos os campos obrigatórios (*).")
     
-    for i, nota in enumerate(respostas_notas):
-        if nota in [1, 5] and len(justificativas[i].strip()) < 5:
-            erros.append(f"A pergunta {i+1} (Nota {nota}) exige uma justificativa detalhada.")
+    for i, (p, nota, obs) in enumerate(respostas_finais_lista):
+        if (nota == 1 or nota == 5) and len(obs.strip()) < 5:
+            erros.append(f"A pergunta {i+1} exige uma justificativa para a nota {nota}.")
 
     if erros:
         for erro in erros: st.error(erro)
     else:
-        media_final = (sum(respostas_notas) / len(respostas_notas)) * 0.40
-        dados_cabecalho = {"Nome": nome, "Year": ano, "Periodo": periodo, "Area": area, "Gestor": gestor, "Ano": ano}
-        respostas_finais = list(zip(perguntas, respostas_notas, justificativas))
+        media_final = (sum(notas_para_media) / len(notas_para_media)) * 0.40
+        dados_cabecalho = {"Nome": nome, "Ano": ano, "Periodo": periodo, "Area": area, "Gestor": gestor}
         
-        pdf_path = gerar_pdf(dados_cabecalho, respostas_finais, dissertativa, media_final)
+        pdf_path = gerar_pdf(dados_cabecalho, respostas_finais_lista, dissertativa, media_final)
         
         if enviar_email(nome, pdf_path, media_final):
             st.success(f"Avaliação enviada com sucesso! Média Final: {media_final:.2f}")

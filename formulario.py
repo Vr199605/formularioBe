@@ -71,7 +71,7 @@ def gerar_pdf(nome, respostas):
 def enviar_pdf_por_email(nome, arquivo_pdf):
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ORIGEM
-    msg["To"] = EMAIL_DESTINO
+    msg["To"] = victormoreiraicnv@gmail.com
     msg["Subject"] = f"📋 Diagnóstico Globus: {nome}"
 
     corpo = f"Olá,\n\nSegue em anexo o formulário de Gestão de Pessoas preenchido por {nome}.\n\nAtenciosamente,\nSistema de Gestão Globus"
@@ -86,7 +86,7 @@ def enviar_pdf_por_email(nome, arquivo_pdf):
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(EMAIL_ORIGEM, SENHA_APP)
+            server.login(victormoreiraicnv@gmail.com, yksp blsm viin nowj)
             server.send_message(msg)
         return True
     except Exception as e:

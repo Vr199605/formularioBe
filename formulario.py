@@ -90,72 +90,72 @@ def enviar_email(nome, arquivo_pdf, media):
 st.set_page_config(page_title="Avaliação Maldivas", layout="centered")
 st.title("🏝️ PROGRAMA DE AVALIAÇÃO DE DESEMPENHO INDIVIDUAL MALDIVAS")
 
-# Fora do formulário para garantir que a interface atualize ao mudar a nota
-if 'respostas_notas' not in st.session_state:
-    st.session_state.respostas_notas = [3] * 6
+# CAMPOS DE CABEÇALHO
+col1, col2 = st.columns(2)
+with col1:
+    nome = st.text_input("Nome do Avaliado*")
+    area = st.text_input("Qual sua área*")
+with col2:
+    ano = st.selectbox("Qual ano", ["2026", "2027", "2028"])
+    periodo = st.radio("Qual período", ["1º semestre", "2º semestre"], horizontal=True)
+gestor = st.text_input("Gestor Direto*")
 
-with st.form("form_maldivas"):
-    col1, col2 = st.columns(2)
-    with col1:
-        nome = st.text_input("Nome do Avaliado*")
-        area = st.text_input("Qual sua área*")
-    with col2:
-        ano = st.selectbox("Qual ano", ["2026", "2027", "2028"])
-        periodo = st.radio("Qual período", ["1º semestre", "2º semestre"], horizontal=True)
-    gestor = st.text_input("Gestor Direto*")
+st.divider()
 
-    st.divider()
+perguntas_texto = [
+    "Qualidade técnica e precisão nas tarefas operacionais?",
+    "Cumprimento de prazos e organização de demandas?",
+    "Proatividade em sugerir melhorias nos processos?",
+    "Colaboração e trabalho em equipe?",
+    "Resiliência e postura profissional sob pressão?",
+    "Alinhamento com a cultura e valores da empresa?"
+]
+
+respostas_coletadas = []
+notas_para_media = []
+
+# Loop para as perguntas (Fora do Form para permitir atualização em tempo real)
+for i, p in enumerate(perguntas_texto):
+    st.write(f"**{i+1}. {p}**")
+    # Nota via selectbox (Dropdown)
+    nota = st.selectbox(f"Selecione a nota para a pergunta {i+1}", options=[1, 2, 3, 4, 5], index=2, key=f"n_{i}")
     
-    preguntas_texto = [
-        "Qualidade técnica e precisão nas tarefas operacionais?",
-        "Cumprimento de prazos e organização de demandas?",
-        "Proatividade em sugerir melhorias nos processos?",
-        "Colaboração e trabalho em equipe?",
-        "Resiliência e postura profissional sob pressão?",
-        "Alinhamento com a cultura e valores da empresa?"
-    ]
+    obs = ""
+    # Agora o campo aparece IMEDIATAMENTE ao selecionar 1 ou 5
+    if nota == 1 or nota == 5:
+        obs = st.text_area(f"Justificativa obrigatória (Nota {nota})*", placeholder="Explique detalhadamente o motivo desta nota...", key=f"obs_{i}")
+    
+    respostas_coletadas.append((p, nota, obs))
+    notas_para_media.append(nota)
+    st.markdown("---")
 
-    respostas_finais_lista = []
-    notas_para_media = []
-
-    for i, p in enumerate(preguntas_texto):
-        st.write(f"**{i+1}. {p}**")
-        # Selectbox conforme imagem
-        nota = st.selectbox(f"Selecione a nota para a pergunta {i+1}", options=[1, 2, 3, 4, 5], index=2, key=f"n_{i}")
-        
-        obs = ""
-        # Lógica para aparecer o comentário obrigatório
-        if nota == 1 or nota == 5:
-            obs = st.text_area(f"Justificativa obrigatória (Nota {nota})*", placeholder="Explique o motivo desta nota...", key=f"obs_{i}")
-        
-        respostas_finais_lista.append((p, nota, obs))
-        notas_para_media.append(nota)
-        st.markdown("---")
-
-    st.write("**Pergunta Dissertativa Final**")
+# PERGUNTA DISSERTATIVA E BOTÃO DE ENVIO
+with st.form("botao_final"):
     dissertativa = st.text_area("Como você enxerga seu papel no crescimento da Globus nos próximos meses? Como a Globus pode ajudar você nesse processo ?*")
-
-    enviar = st.form_submit_button("Finalizar Avaliação")
+    enviar = st.form_submit_button("Finalizar e Enviar Avaliação")
 
 if enviar:
     erros = []
+    # Validação de campos obrigatórios
     if not nome or not area or not gestor or not dissertativa:
-        erros.append("Por favor, preencha todos os campos obrigatórios (*).")
+        erros.append("Por favor, preencha todos os campos obrigatórios (Nome, Área, Gestor e Pergunta Final).")
     
-    for i, (p, nota, obs) in enumerate(respostas_finais_lista):
+    # Validação das justificativas de 1 e 5
+    for i, (p, nota, obs) in enumerate(respostas_coletadas):
         if (nota == 1 or nota == 5) and len(obs.strip()) < 5:
             erros.append(f"A pergunta {i+1} exige uma justificativa para a nota {nota}.")
 
     if erros:
         for erro in erros: st.error(erro)
     else:
+        # Cálculo da Média (40% da média simples)
         media_final = (sum(notas_para_media) / len(notas_para_media)) * 0.40
         dados_cabecalho = {"Nome": nome, "Ano": ano, "Periodo": periodo, "Area": area, "Gestor": gestor}
         
-        pdf_path = gerar_pdf(dados_cabecalho, respostas_finais_lista, dissertativa, media_final)
+        pdf_path = gerar_pdf(dados_cabecalho, respostas_coletadas, dissertativa, media_final)
         
         if enviar_email(nome, pdf_path, media_final):
             st.success(f"Avaliação enviada com sucesso! Média Final: {media_final:.2f}")
             st.balloons()
         else:
-            st.error("Erro ao enviar e-mail. Verifique a Senha de App do Google.")
+            st.error("Erro ao enviar e-mail. Verifique sua Senha de App do Google.")

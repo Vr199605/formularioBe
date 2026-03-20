@@ -14,7 +14,7 @@ from reportlab.lib.styles import ParagraphStyle
 # ========== CONFIGURAÇÕES ==========
 # Importante: Use uma "Senha de App" se for Gmail
 EMAIL_ORIGEM = "seu_email@gmail.com" 
-SENHA_APP = "sua_senha_de_app"
+SENHA_APP = "yksp blsm viin nowj"
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
 
 # ========== GERAR PDF DIVIDIDO ==========
@@ -71,7 +71,7 @@ def gerar_pdf(nome, respostas):
 def enviar_pdf_por_email(nome, arquivo_pdf):
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ORIGEM
-    msg["To"] = victormoreiraicnv@gmail.com
+    msg["To"] = EMAIL_DESTINO
     msg["Subject"] = f"📋 Diagnóstico Globus: {nome}"
 
     corpo = f"Olá,\n\nSegue em anexo o formulário de Gestão de Pessoas preenchido por {nome}.\n\nAtenciosamente,\nSistema de Gestão Globus"
@@ -86,7 +86,7 @@ def enviar_pdf_por_email(nome, arquivo_pdf):
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(victormoreiraicnv@gmail.com, yksp blsm viin nowj)
+            server.login(EMAIL_ORIGEM, SENHA_APP)
             server.send_message(msg)
         return True
     except Exception as e:

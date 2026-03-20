@@ -12,7 +12,8 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 
 # ========== CONFIGURAÇÕES ==========
-EMAIL_ORIGEM = "seu_email@gmail.com"
+# Importante: Use uma "Senha de App" se for Gmail
+EMAIL_ORIGEM = "seu_email@gmail.com" 
 SENHA_APP = "sua_senha_de_app"
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
 
@@ -35,14 +36,14 @@ def gerar_pdf(nome, respostas):
 
     # Página 1 - Bloco 1
     y = height - 50
-    y -= draw_paragraph("📝 Formulário de Perfil Profissional", titulo_style, 50, y, width - 100) + 20
+    y -= draw_paragraph("📝 Diagnóstico de Gestão e Pessoas - Globus", titulo_style, 50, y, width - 100) + 20
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, f"👤 Nome: {nome}")
+    c.drawString(50, y, f"👤 Colaborador: {nome}")
     y -= 30
     c.setFillColor(colors.HexColor("#4B8BBE"))
     c.rect(50, y - 20, width - 100, 25, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.drawString(55, y - 10, "🔹 Primeiro Bloco")
+    c.drawString(55, y - 10, "🔹 Bloco 1: Cultura e Relacionamento")
     y -= 40
 
     for i, (pergunta, resposta) in enumerate(respostas[:6], start=1):
@@ -56,7 +57,7 @@ def gerar_pdf(nome, respostas):
     c.rect(50, y - 20, width - 100, 25, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(55, y - 10, "🔹 Segundo Bloco")
+    c.drawString(55, y - 10, "🔹 Bloco 2: Liderança e Processos")
     y -= 40
 
     for i, (pergunta, resposta) in enumerate(respostas[6:], start=7):
@@ -71,9 +72,9 @@ def enviar_pdf_por_email(nome, arquivo_pdf):
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ORIGEM
     msg["To"] = EMAIL_DESTINO
-    msg["Subject"] = f"📋 Formulário Respondido por {nome}"
+    msg["Subject"] = f"📋 Diagnóstico Globus: {nome}"
 
-    corpo = f"Olá,\n\nSegue em anexo o formulário preenchido por {nome}.\n\nAtenciosamente,\nSistema Automatizado"
+    corpo = f"Olá,\n\nSegue em anexo o formulário de Gestão de Pessoas preenchido por {nome}.\n\nAtenciosamente,\nSistema de Gestão Globus"
     msg.attach(MIMEText(corpo, "plain"))
 
     with open(arquivo_pdf, "rb") as f:
@@ -96,35 +97,35 @@ def enviar_pdf_por_email(nome, arquivo_pdf):
             os.remove(arquivo_pdf)
 
 # ========== STREAMLIT APP ==========
-st.set_page_config(page_title="Formulário Profissional", layout="centered")
-st.title("📝 Formulário de Perfil Profissional")
+st.set_page_config(page_title="Gestão Globus", layout="centered")
+st.title("👥 Diagnóstico de Gestão e Pessoas")
 
 with st.form("formulario"):
     nome = st.text_input("👤 Seu nome completo")
 
-    st.markdown("### 🔹 Primeiro Bloco")
+    st.markdown("### 🔹 Cultura e Relacionamento")
     perguntas1 = [
-        "Como você se sente ao lidar com clientes ou apresentar uma ideia para outras pessoas?",
-        "Você já precisou convencer alguém a tomar uma decisão importante? Como fez isso?",
-        "Você gosta de metas e desafios? Pode dar um exemplo recente?",
-        "O que você faria se tivesse que bater uma meta de vendas em pouco tempo?",
-        "Você prefere trabalhar sozinho ou em ambientes onde precisa interagir constantemente com outras pessoas?",
-        "Como reage quando recebe um “não”? O que faz depois?"
+        "Como você descreve sua relação de trabalho com os demais membros da equipe comercial e operacional?",
+        "Diante de um conflito entre colegas sobre uma demanda de seguro/previdência, como você costuma intervir?",
+        "O que você considera essencial para manter um ambiente de trabalho motivado e disciplinado?",
+        "Como você lida com feedbacks construtivos sobre sua performance técnica ou comportamental?",
+        "De que forma você contribui para que os novos colaboradores se adaptem rápido à rotina da corretora?",
+        "Qual valor da Globus você mais pratica no seu dia a dia e por quê?"
     ]
     respostas1 = [st.text_area(p) for p in perguntas1]
 
-    st.markdown("### 🔹 Segundo Bloco")
+    st.markdown("### 🔹 Liderança e Processos")
     perguntas2 = [
-        "Onde você se imagina profissionalmente em 3 a 5 anos?",
-        "O que te motiva a fazer mais do que o esperado no trabalho?",
-        "Você se considera uma pessoa competitiva? Em que situações isso aparece?",
-        "Já assumiu responsabilidades que não eram obrigatórias? Pode dar um exemplo?",
-        "Se você tivesse liberdade para escolher um novo projeto ou cargo, qual seria e por quê?",
-        "Qual sua reação ao ver alguém crescendo rápido dentro da empresa?"
+        "Se você fosse responsável por organizar as demandas da semana, como faria a divisão entre a equipe?",
+        "Como você identifica que um colega está sobrecarregado e como agiria para ajudar?",
+        "Para você, qual a maior dificuldade em gerir processos que dependem da colaboração de várias pessoas?",
+        "Como você reage quando um erro operacional acontece? Foca na solução imediata ou na busca pelo responsável?",
+        "Se você tivesse que sugerir uma mudança na forma como o time se comunica hoje, qual seria?",
+        "Como você enxerga seu papel no crescimento da Globus nos próximos meses?"
     ]
     respostas2 = [st.text_area(p) for p in perguntas2]
 
-    enviado = st.form_submit_button("📨 Enviar por e-mail")
+    enviado = st.form_submit_button("📨 Enviar Diagnóstico")
 
 if enviado and nome.strip():
     respostas_completas = list(zip(perguntas1 + perguntas2, respostas1 + respostas2))
@@ -132,8 +133,8 @@ if enviado and nome.strip():
     sucesso = enviar_pdf_por_email(nome, pdf_path)
 
     if sucesso:
-        st.success("✅ PDF gerado e enviado por e-mail com sucesso!")
+        st.success(f"✅ Diagnóstico enviado com sucesso para {EMAIL_DESTINO}!")
     else:
-        st.error("❌ Erro ao enviar o e-mail. Verifique credenciais.")
+        st.error("❌ Erro ao enviar. Verifique as credenciais de SMTP no código.")
 elif enviado:
-    st.warning("⚠️ Por favor, preencha seu nome.")
+    st.warning("⚠️ Por favor, preencha seu nome para identificar o formulário.")

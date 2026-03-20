@@ -13,7 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 
 # ========== CONFIGURAÇÕES (SUBSTITUA AQUI) ==========
 EMAIL_ORIGEM = "seu_email@gmail.com" 
-SENHA_APP = "tsol zhdv cmmb olgu"  # Use a senha de 16 dígitos gerada pelo Google
+SENHA_APP = "yksp blsm viin nowj"  # Use a senha de 16 dígitos gerada pelo Google
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
 
 # ========== FUNÇÃO: GERAR PDF ==========

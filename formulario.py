@@ -106,7 +106,7 @@ with st.form("formulario"):
     st.markdown("### 🔹 Cultura e Relacionamento")
     perguntas1 = [
         "Como você descreve sua relação de trabalho com os demais membros da equipe comercial e operacional?",
-        "Diante de um conflito entre colegas sobre uma demanda de seguro/previdência, como você costuma intervir?",
+        "Diante de um conflito entre colegas sobre uma demanda de alguma tarefa, como você costuma intervir?",
         "O que você considera essencial para manter um ambiente de trabalho motivado e disciplinado?",
         "Como você lida com feedbacks construtivos sobre sua performance técnica ou comportamental?",
         "De que forma você contribui para que os novos colaboradores se adaptem rápido à rotina da corretora?",

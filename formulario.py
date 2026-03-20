@@ -11,12 +11,12 @@ from reportlab.lib import colors
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 
-# ========== CONFIGURAÇÕES ==========
+# ========== CONFIGURAÇÕES (SUBSTITUA AQUI) ==========
 EMAIL_ORIGEM = "seu_email@gmail.com" 
-SENHA_APP = "tsol zhdv cmmb olgu"
+SENHA_APP = "tsol zhdv cmmb olgu"  # Use a senha de 16 dígitos gerada pelo Google
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
 
-# ========== GERAR PDF ==========
+# ========== FUNÇÃO: GERAR PDF ==========
 def gerar_pdf(dados_cabecalho, respostas, dissertativa, media_final):
     nome = dados_cabecalho['Nome']
     arquivo_pdf = f"AVALIACAO_MALDIVAS_{nome.replace(' ', '_')}.pdf"
@@ -43,7 +43,7 @@ def gerar_pdf(dados_cabecalho, respostas, dissertativa, media_final):
     y -= 30
 
     for i, (pergunta, nota, justificativa) in enumerate(respostas, start=1):
-        if y < 120: 
+        if y < 150: 
             c.showPage()
             y = height - 50
         y -= draw_paragraph(f"<b>{i}. {pergunta}</b> - Nota: {nota}", pergunta_style, 50, y, width - 100) + 5
@@ -51,44 +51,57 @@ def gerar_pdf(dados_cabecalho, respostas, dissertativa, media_final):
             y -= draw_paragraph(f"Justificativa: {justificativa}", resposta_style, 50, y, width - 100) + 10
         y -= 10
 
+    if y < 150:
+        c.showPage()
+        y = height - 50
+
     y -= 10
     y -= draw_paragraph("<b>Visão de Futuro e Suporte:</b>", pergunta_style, 50, y, width - 100) + 5
     y -= draw_paragraph(dissertativa, resposta_style, 50, y, width - 100) + 20
 
-    y -= 20
+    y -= 30
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, y, f"MÉDIA FINAL (40%): {media_final:.2f}")
     
     c.save()
     return arquivo_pdf
 
-# ========== ENVIAR E-MAIL ==========
+# ========== FUNÇÃO: ENVIAR E-MAIL ==========
 def enviar_email(nome, arquivo_pdf, media):
     msg = MIMEMultipart()
     msg["From"] = EMAIL_ORIGEM
     msg["To"] = EMAIL_DESTINO
     msg["Subject"] = f"Avaliação Maldivas - {nome}"
-    msg.attach(MIMEText(f"Avaliação de {nome} concluída.\nMédia Final: {media:.2f}", "plain"))
-
-    with open(arquivo_pdf, "rb") as f:
-        parte = MIMEBase("application", "pdf")
-        parte.set_payload(f.read())
-        encoders.encode_base64(parte)
-        parte.add_header("Content-Disposition", f"attachment; filename={arquivo_pdf}")
-        msg.attach(parte)
+    
+    corpo = f"Avaliação de {nome} concluída.\nMédia Final: {media:.2f}"
+    msg.attach(MIMEText(corpo, "plain"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(EMAIL_ORIGEM, SENHA_APP)
-            server.send_message(msg)
+        with open(arquivo_pdf, "rb") as f:
+            parte = MIMEBase("application", "pdf")
+            parte.set_payload(f.read())
+            encoders.encode_base64(parte)
+            parte.add_header("Content-Disposition", f"attachment; filename={os.path.basename(arquivo_pdf)}")
+            msg.attach(parte)
+
+        # Configuração SMTP recomendada para Gmail
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()  # Camada de segurança
+        server.login(EMAIL_ORIGEM, SENHA_APP)
+        server.send_message(msg)
+        server.quit()
         return True
-    except: return False
+    except Exception as e:
+        st.error(f"Erro técnico no envio: {e}")
+        return False
     finally:
-        if os.path.exists(arquivo_pdf): os.remove(arquivo_pdf)
+        # Garante que o arquivo temporário seja deletado
+        if os.path.exists(arquivo_pdf):
+            os.remove(arquivo_pdf)
 
 # ========== INTERFACE STREAMLIT ==========
 st.set_page_config(page_title="Avaliação Maldivas", layout="centered")
-st.title("🏝️ PROGRAMA DE AVALIAÇÃO DE DESEMPENHO INDIVIDUAL MALDIVAS")
+st.title("🏝️ PROGRAMA DE AVALIAÇÃO DE DESEMPENHO")
 
 # CAMPOS DE CABEÇALHO
 col1, col2 = st.columns(2)
@@ -114,48 +127,44 @@ perguntas_texto = [
 respostas_coletadas = []
 notas_para_media = []
 
-# Loop para as perguntas (Fora do Form para permitir atualização em tempo real)
+# Loop das perguntas
 for i, p in enumerate(perguntas_texto):
     st.write(f"**{i+1}. {p}**")
-    # Nota via selectbox (Dropdown)
-    nota = st.selectbox(f"Selecione a nota para a pergunta {i+1}", options=[1, 2, 3, 4, 5], index=2, key=f"n_{i}")
+    nota = st.selectbox(f"Nota para pergunta {i+1}", options=[1, 2, 3, 4, 5], index=2, key=f"n_{i}")
     
     obs = ""
-    # Agora o campo aparece IMEDIATAMENTE ao selecionar 1 ou 5
     if nota == 1 or nota == 5:
-        obs = st.text_area(f"Justificativa obrigatória (Nota {nota})*", placeholder="Explique detalhadamente o motivo desta nota...", key=f"obs_{i}")
+        obs = st.text_area(f"Justificativa obrigatória (Nota {nota})*", key=f"obs_{i}")
     
     respostas_coletadas.append((p, nota, obs))
     notas_para_media.append(nota)
     st.markdown("---")
 
-# PERGUNTA DISSERTATIVA E BOTÃO DE ENVIO
+# PERGUNTA FINAL E ENVIO
 with st.form("botao_final"):
-    dissertativa = st.text_area("Como você enxerga seu papel no crescimento da Globus nos próximos meses? Como a Globus pode ajudar você nesse processo ?*")
+    dissertativa = st.text_area("Como você enxerga seu papel no crescimento da empresa e como podemos ajudar?*")
     enviar = st.form_submit_button("Finalizar e Enviar Avaliação")
 
 if enviar:
     erros = []
-    # Validação de campos obrigatórios
     if not nome or not area or not gestor or not dissertativa:
-        erros.append("Por favor, preencha todos os campos obrigatórios (Nome, Área, Gestor e Pergunta Final).")
+        erros.append("Preencha todos os campos obrigatórios.")
     
-    # Validação das justificativas de 1 e 5
     for i, (p, nota, obs) in enumerate(respostas_coletadas):
         if (nota == 1 or nota == 5) and len(obs.strip()) < 5:
-            erros.append(f"A pergunta {i+1} exige uma justificativa para a nota {nota}.")
+            erros.append(f"A pergunta {i+1} exige justificativa.")
 
     if erros:
         for erro in erros: st.error(erro)
     else:
-        # Cálculo da Média (40% da média simples)
-        media_final = (sum(notas_para_media) / len(notas_para_media)) * 0.40
+        media_simples = sum(notas_para_media) / len(notas_para_media)
+        media_final = media_simples * 0.40
         dados_cabecalho = {"Nome": nome, "Ano": ano, "Periodo": periodo, "Area": area, "Gestor": gestor}
         
-        pdf_path = gerar_pdf(dados_cabecalho, respostas_coletadas, dissertativa, media_final)
-        
-        if enviar_email(nome, pdf_path, media_final):
-            st.success(f"Avaliação enviada com sucesso! Média Final: {media_final:.2f}")
-            st.balloons()
-        else:
-            st.error("Erro ao enviar e-mail. Verifique sua Senha de App do Google.")
+        with st.spinner("Gerando PDF e enviando e-mail..."):
+            pdf_path = gerar_pdf(dados_cabecalho, respostas_coletadas, dissertativa, media_final)
+            if enviar_email(nome, pdf_path, media_final):
+                st.success(f"Enviado com sucesso! Média Final (40%): {media_final:.2f}")
+                st.balloons()
+            else:
+                st.error("Falha no envio. Verifique a Senha de App e o E-mail de Origem.")

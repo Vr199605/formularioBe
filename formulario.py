@@ -13,7 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 
 # ========== CONFIGURAÇÕES ==========
 EMAIL_ORIGEM = "seu_email@gmail.com" 
-SENHA_APP = "yksp blsm viin nowj"
+SENHA_APP = "tsol zhdv cmmb olgu"
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
 
 # ========== GERAR PDF ==========

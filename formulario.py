@@ -13,7 +13,8 @@ from reportlab.lib import colors
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 
-# ========== CONFIGURAÇÕES DE E-MAIL ==========
+# ========== CONFIGURAÇÕES ==========
+# Substitua pelos seus dados reais ou use st.secrets para maior segurança
 EMAIL_ORIGEM = "seu_email@gmail.com" 
 SENHA_APP = "yksp blsm viin nowj"
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
@@ -55,6 +56,8 @@ def gerar_pdf_360(dados, n_colab, n_gestor, media_final):
 
 # ========== INTERFACE STREAMLIT ==========
 st.set_page_config(page_title="Maldivas 360", layout="centered")
+
+# Conexão que utiliza os Secrets [connections.gsheets]
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 st.title("🏝️ PROGRAMA MALDIVAS - AVALIAÇÃO 360°")
@@ -85,21 +88,21 @@ justificativas = []
 st.subheader(f"Formulário de {perfil}")
 for i, p in enumerate(perguntas):
     st.write(f"**{i+1}. {p}**")
-    n = st.selectbox(f"Nota para: {p[:20]}...", [1,2,3,4,5], index=2, key=f"n_{i}")
+    n = st.selectbox(f"Nota {i+1}", [1,2,3,4,5], index=2, key=f"n_{i}")
     notas_atuais.append(n)
     
     obs = ""
     if n in [1, 5]:
-        obs = st.text_area(f"Justificativa obrigatória (Nota {n})*", key=f"obs_{i}", placeholder="Explique o motivo...")
+        obs = st.text_area(f"Justificativa obrigatória (Nota {n})*", key=f"obs_{i}")
     justificativas.append(obs)
     st.divider()
 
 dissertativa = st.text_area("Como você enxerga seu papel no crescimento da Globus nos próximos meses? Como a Globus pode ajudar você nesse processo ?*")
 
 if st.button("🚀 Finalizar e Enviar"):
-    df = conn.read(spreadsheet=URL_PLANILHA)
+    # Lê a planilha usando a URL e desativando o cache para pegar dados novos
+    df = conn.read(spreadsheet=URL_PLANILHA, ttl=0)
     
-    # VALIDAÇÃO DE CAMPOS
     if not nome_input or not area or not dissertativa:
         st.error("Preencha todos os campos obrigatórios!")
     else:
@@ -110,29 +113,36 @@ if st.button("🚀 Finalizar e Enviar"):
                 "Notas_Colab": str(notas_atuais), "Dissert_Colab": dissertativa, "Status": "Pendente Gestor"
             }])
             df_atualizado = pd.concat([df, novo_registro], ignore_index=True)
+            
+            # Update sem passar a URL novamente para evitar UnsupportedOperationError
             conn.update(spreadsheet=URL_PLANILHA, data=df_atualizado)
-            st.success("✅ Autoavaliação enviada! Agora seu gestor deve preencher a parte dele.")
+            st.success("✅ Autoavaliação enviada com sucesso!")
             
         else: # PERFIL GESTOR
-            # BUSCAR DADOS DO COLABORADOR
+            # Busca a última entrada do colaborador com esse nome
             match = df[df["Nome"] == nome_input]
+            
             if match.empty:
-                st.error("❌ Erro: O colaborador ainda não realizou a autoavaliação.")
+                st.error("❌ O colaborador ainda não realizou a autoavaliação.")
             else:
-                notas_c = eval(match.iloc[-1]["Notas_Colab"])
+                # Recupera notas do colaborador
+                idx_original = match.index[-1]
+                notas_c = eval(match.loc[idx_original, "Notas_Colab"])
+                
+                # Cálculos
                 m_c = sum(notas_c) / len(notas_c)
                 m_g = sum(notas_atuais) / len(notas_atuais)
-                
-                # CÁLCULO 40% COLAB / 60% GESTOR
                 media_ponderada = (m_c * 0.4) + (m_g * 0.6)
                 
-                # ATUALIZAR PLANILHA COM DADOS DO GESTOR
-                df.loc[df[df["Nome"] == nome_input].index[-1], "Notas_Gestor"] = str(notas_atuais)
-                df.loc[df[df["Nome"] == nome_input].index[-1], "Dissert_Gestor"] = dissertativa
-                df.loc[df[df["Nome"] == nome_input].index[-1], "Media_Final"] = media_ponderada
+                # Atualiza a linha existente
+                df.loc[idx_original, "Notas_Gestor"] = str(notas_atuais)
+                df.loc[idx_original, "Dissert_Gestor"] = dissertativa
+                df.loc[idx_original, "Media_Final"] = media_ponderada
+                df.loc[idx_original, "Status"] = "Concluído"
+                
                 conn.update(spreadsheet=URL_PLANILHA, data=df)
                 
-                # GERAR RESULTADO
+                # PDF
                 dados_pdf = {'Nome': nome_input, 'Area': area, 'Gestor': gestor, 'Periodo': periodo, 'Perguntas': perguntas}
                 pdf_path = gerar_pdf_360(dados_pdf, notas_c, notas_atuais, media_ponderada)
                 

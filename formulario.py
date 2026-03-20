@@ -15,9 +15,9 @@ from reportlab.lib.styles import ParagraphStyle
 
 # ========== CONFIGURAÇÕES DE E-MAIL ==========
 EMAIL_ORIGEM = "seu_email@gmail.com" 
-SENHA_APP = "sua_senha_de_app"
+SENHA_APP = "yksp blsm viin nowj"
 EMAIL_DESTINO = "victormoreiraicnv@gmail.com"
-URL_PLANILHA = "SUA_URL_DA_PLANILHA_AQUI"
+URL_PLANILHA = "https://docs.google.com/spreadsheets/d/12rzPifbWvoZ1lfYx9UWy263H_LROFuQ_ezp66Kor-2I/edit?gid=0#gid=0"
 
 # ========== FUNÇÃO GERAR PDF ==========
 def gerar_pdf_360(dados, n_colab, n_gestor, media_final):
